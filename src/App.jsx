@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
-import { Upload, Download, Plus, Trash2, Clipboard, AlertCircle, FileText } from 'lucide-react';
+import { Upload, Download, Plus, Trash2, Clipboard, AlertCircle, FileText, ChevronRight } from 'lucide-react';
 
 // --- Data & Helper Functions ---
 
@@ -47,7 +47,7 @@ const naturalSort = (a, b) => {
 
 // --- D3 Chart Component ---
 
-const SunburstChart = ({ data }) => {
+const SunburstChart = ({ data, onPathClick }) => {
   const svgRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -350,9 +350,29 @@ export default function App() {
     const newData = [...data];
     const row = newData[rowIndex];
     
-    let newScore = (maturityIndex + 1) / totalMaturities;
-    if (String(maturityText).trim().toLowerCase() === 'no') {
-        newScore = 0;
+    const isNo = String(maturityText).trim().toLowerCase() === 'no';
+    let newScore = 0;
+
+    if (!isNo) {
+        const currentMaturities = row.maturities;
+        
+        // 1. Calculate Denominator: Count valid options (not "No", not empty)
+        const valueOptionCount = currentMaturities.filter(m => {
+            const txt = String(m).trim().toLowerCase();
+            return txt !== 'no' && txt !== '';
+        }).length;
+        
+        // 2. Calculate Rank: Position of clicked item relative to non-No items
+        let rank = 0;
+        for (let i = 0; i <= maturityIndex; i++) {
+             const textAtIndex = currentMaturities[i];
+             const txt = String(textAtIndex).trim().toLowerCase();
+             if (txt !== 'no' && txt !== '') {
+                 rank++;
+             }
+        }
+        
+        newScore = valueOptionCount > 0 ? rank / valueOptionCount : 0;
     }
 
     if (row.selectedMaturityIndex === maturityIndex) {
